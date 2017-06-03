@@ -108,8 +108,8 @@ static int lavc_GetFrame(struct AVCodecContext *, AVFrame *, int);
 static int  ffmpeg_GetFrameBuf    ( struct AVCodecContext *, AVFrame * );
 static void ffmpeg_ReleaseFrameBuf( struct AVCodecContext *, AVFrame * );
 #endif
-static enum PixelFormat ffmpeg_GetFormat( AVCodecContext *,
-                                          const enum PixelFormat * );
+static enum AVPixelFormat ffmpeg_GetFormat( AVCodecContext *,
+                                          const enum AVPixelFormat * );
 
 static uint32_t ffmpeg_CodecTag( vlc_fourcc_t fcc )
 {
@@ -223,7 +223,7 @@ int InitVideoDec( decoder_t *p_dec, AVCodecContext *p_context,
     p_sys->p_codec = p_codec;
     p_sys->i_codec_id = i_codec_id;
     p_sys->psz_namecodec = psz_namecodec;
-    p_sys->p_ff_pic = avcodec_alloc_frame();
+    p_sys->p_ff_pic = av_frame_alloc();
     p_sys->b_delayed_open = true;
     p_sys->p_va = NULL;
     vlc_sem_init( &p_sys->sem_mt, 0 );
@@ -975,7 +975,7 @@ static picture_t *lavc_dr_GetFrame(struct AVCodecContext *ctx,
     if (GetVlcChroma(&dec->fmt_out.video, ctx->pix_fmt) != VLC_SUCCESS)
         return NULL;
     dec->fmt_out.i_codec = dec->fmt_out.video.i_chroma;
-    if (ctx->pix_fmt == PIX_FMT_PAL8)
+    if (ctx->pix_fmt == AV_PIX_FMT_PAL8)
         return NULL;
 
     int width = frame->width;
@@ -1151,7 +1151,7 @@ static picture_t *ffmpeg_dr_GetFrameBuf(struct AVCodecContext *p_context)
     if (GetVlcChroma(&p_dec->fmt_out.video, p_context->pix_fmt) != VLC_SUCCESS)
         goto no_dr;
 
-    if (p_context->pix_fmt == PIX_FMT_PAL8)
+    if (p_context->pix_fmt == AV_PIX_FMT_PAL8)
         goto no_dr;
 
     p_dec->fmt_out.i_codec = p_dec->fmt_out.video.i_chroma;
@@ -1186,7 +1186,7 @@ static picture_t *ffmpeg_dr_GetFrameBuf(struct AVCodecContext *p_context)
             goto no_dr;
     }
 
-    if( p_context->pix_fmt == PIX_FMT_YUV422P )
+    if( p_context->pix_fmt == AV_PIX_FMT_YUV422P )
     {
         if( 2 * p_pic->p[1].i_pitch != p_pic->p[0].i_pitch ||
             2 * p_pic->p[2].i_pitch != p_pic->p[0].i_pitch )
@@ -1284,8 +1284,8 @@ static void ffmpeg_ReleaseFrameBuf( struct AVCodecContext *p_context,
 }
 #endif
 
-static enum PixelFormat ffmpeg_GetFormat( AVCodecContext *p_context,
-                                          const enum PixelFormat *pi_fmt )
+static enum AVPixelFormat ffmpeg_GetFormat( AVCodecContext *p_context,
+                                          const enum AVPixelFormat *pi_fmt )
 {
     decoder_t *p_dec = p_context->opaque;
     decoder_sys_t *p_sys = p_dec->p_sys;
@@ -1296,7 +1296,7 @@ static enum PixelFormat ffmpeg_GetFormat( AVCodecContext *p_context,
 
     /* Enumerate available formats */
     bool can_hwaccel = false;
-    for( size_t i = 0; pi_fmt[i] != PIX_FMT_NONE; i++ )
+    for( size_t i = 0; pi_fmt[i] != AV_PIX_FMT_NONE; i++ )
     {
         const AVPixFmtDescriptor *dsc = av_pix_fmt_desc_get(pi_fmt[i]);
         if (dsc == NULL)
@@ -1323,7 +1323,7 @@ static enum PixelFormat ffmpeg_GetFormat( AVCodecContext *p_context,
     if( p_va == NULL )
         goto end;
 
-    for( size_t i = 0; pi_fmt[i] != PIX_FMT_NONE; i++ )
+    for( size_t i = 0; pi_fmt[i] != AV_PIX_FMT_NONE; i++ )
     {
         if( p_va->pix_fmt != pi_fmt[i] )
             continue;
